@@ -65,9 +65,9 @@ MainGame.prototype = {
         this.cooldown = 0;
 
         this.bullets = [];
-        this.food = this.add.group();
 
-        this.food.create(64, 64, "food");
+
+
 
         this.add.button( 100, 30*32, 'add_1', this.add1, this, 2, 1, 0);
 
@@ -98,23 +98,44 @@ MainGame.prototype = {
 
         this.pf = new PF.Grid(this.grid);
         this.path = new PF.AStarFinder();
-
+        this.food = this.add.group();
         this.players = this.add.group();
 
         for (var i = 0; i<2; i++) {
-            var player = this.add.sprite(32*27, 32*(25+i*2), "player");
-            player.selected = false;
-            player.alpha = 1;
-            player.tint = 0x00ff00;
-            this.physics.arcade.enable(player);
-            //player.body.static = true;
-            this.players.add(player);
+            this.createPlayer();
         }
         echo(this.players);
         this.enemy = this.add.sprite(32*28, 64, "enemy");
         this.physics.arcade.enable(this.enemy);
         this.enemy.goal = [32*28, 64];
+        this.createFud();
 
+    },
+
+    rand: function(lo, hi) {
+        var d = hi-lo;
+        return lo + Math.floor(Math.random()*d)
+    },
+
+    createPlayer: function() {
+        var player = this.add.sprite(32*24 + 32*this.rand(0,4),  32*24 + 32*this.rand(0,4), "player");
+        player.selected = false;
+        player.alpha = 1;
+        player.tint = 0x00ff00;
+        this.physics.arcade.enable(player);
+        this.players.add(player);
+    },
+
+    createFud: function() {
+        var x = 0;
+        var y = 0;
+        while(this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==1) {
+            x = Math.floor(Math.random()*30);
+            y = Math.floor(Math.random()*30);
+        }
+        var fud = this.add.sprite(x*32, y*32, "food");
+        this.physics.arcade.enable(fud);
+        this.food.add(fud);
     },
 
 
@@ -153,6 +174,7 @@ MainGame.prototype = {
         obj2.x = null;
         obj2.y = null;
         obj2.kill();
+        this.createFud();
     },
 
     wall: function(obj1, obj2) {
@@ -268,6 +290,18 @@ MainGame.prototype = {
                     b.body.velocity.x = 500*Math.cos(direction);
                     b.body.velocity.y = 500*Math.sin(direction);
                     this.bullets.push(b);
+
+                    var path = [];
+                    while (path.length == 0) {
+                        var gridBackup = this.pf.clone();
+                        path = this.path.findPath(Math.floor(this.enemy.x / 32), Math.floor(this.enemy.y / 32),
+                            Math.floor(29 * Math.random()), Math.floor(29 * Math.random()), this.pf);
+
+                        this.pf = gridBackup;
+                    }
+                    path = this.convertToWorld(path);
+                    this.add.tween(this.enemy).to({x: path[0], y: path[1]}, 300 * path[0].length).start();
+                    this.enemy.goal = [path[0][path[0].length - 1], path[1][path[1].length - 1]];
                 }
 
             }
