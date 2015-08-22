@@ -32,6 +32,24 @@ MainGame.prototype = {
         this.load.image("enemy", "res/img/enemy.png");
         this.load.image("path", "res/img/path.png");
         this.load.image("bullet", "res/img/bullet.png");
+        this.load.image("add_1", "res/img/add_1.png");
+        this.load.image("add_2", "res/img/add_2.png");
+        this.load.image("add_3", "res/img/add_3.png");
+        this.load.image("food", "res/img/food.png");
+    },
+
+    add1: function() {
+        if (this.money >= 100) {
+            this.money-=100;
+            this.moneyText.text = "Money: " + this.money;
+            var player = this.add.sprite(32*27, 32*(27), "player");
+            player.selected = false;
+            player.alpha = 1;
+            player.tint = 0x00ff00;
+            this.physics.arcade.enable(player);
+            //player.body.static = true;
+            this.players.add(player);
+        }
     },
 
     create: function() {
@@ -47,11 +65,15 @@ MainGame.prototype = {
         this.cooldown = 0;
 
         this.bullets = [];
+        this.food = this.add.group();
 
+        this.food.create(64, 64, "food");
+
+        this.add.button( 100, 30*32, 'add_1', this.add1, this, 2, 1, 0);
 
         this.money = 100;
 
-        this.moneyText = this.add.text(500, 0, "Money: " + this.money);
+        this.moneyText = this.add.text(20*30, 32*30, "Money: " + this.money);
         //SCREW THIS WITH A VENGEANCE
 
         //  Because we're loading CSV map data we have to specify the tile size here or we can't render it
@@ -75,7 +97,7 @@ MainGame.prototype = {
         }
 
         this.pf = new PF.Grid(this.grid);
-        this.path = new PF.BestFirstFinder();
+        this.path = new PF.AStarFinder();
 
         this.players = this.add.group();
 
@@ -90,6 +112,7 @@ MainGame.prototype = {
         }
         echo(this.players);
         this.enemy = this.add.sprite(32*28, 64, "enemy");
+        this.physics.arcade.enable(this.enemy);
         this.enemy.goal = [32*28, 64];
 
     },
@@ -124,14 +147,28 @@ MainGame.prototype = {
         obj2.kill();
     },
 
+    eat: function(obj1, obj2) {
+        this.money += 100;
+        this.moneyText.text = "Money: " + this.money
+        obj2.x = null;
+        obj2.y = null;
+        obj2.kill();
+    },
+
     wall: function(obj1, obj2) {
         obj1.x = null;
         obj1.y = null;
         obj1.kill();
     },
 
+    win: function(obj1, obj2) {
+        this.enemy.kill();
+    },
+
     update: function() {
 
+        this.physics.arcade.overlap(this.players, this.enemy, this.win, null, this);
+        this.physics.arcade.overlap(this.players, this.food, this.eat, null, this);
         for (var i in this.bullets) {
             this.physics.arcade.overlap (this.players, this.bullets[i], this.killThings, null, this);
             try {
@@ -224,7 +261,7 @@ MainGame.prototype = {
             if (min_p != null) {
                 echo(min_p.x);
                 if (this.shotCooldown == 0) {
-                    this.shotCooldown = 20;
+                    this.shotCooldown = 200;
                     var direction = -Math.atan2(min_p.x - this.enemy.x, min_p.y - this.enemy.y)+(Math.PI/2);
                     var b = this.add.sprite(this.enemy.x+16, this.enemy.y+16, "bullet");
                     this.physics.arcade.enable(b);
