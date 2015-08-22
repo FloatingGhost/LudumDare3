@@ -42,13 +42,23 @@ MainGame.prototype = {
         if (this.money >= 100) {
             this.money-=100;
             this.moneyText.text = "Money: " + this.money;
-            var player = this.add.sprite(32*27, 32*(27), "player");
-            player.selected = false;
-            player.alpha = 1;
-            player.tint = 0x00ff00;
-            this.physics.arcade.enable(player);
-            //player.body.static = true;
-            this.players.add(player);
+            this.createPlayer(1, 1);
+        }
+    },
+
+    add2: function() {
+        if (this.money >= 200) {
+            this.money-=100;
+            this.moneyText.text = "Money: " + this.money;
+            this.createPlayer(3, 1);
+        }
+    },
+
+    add3: function() {
+        if (this.money >= 200) {
+            this.money-=100;
+            this.moneyText.text = "Money: " + this.money;
+            this.createPlayer(1, 3);
         }
     },
 
@@ -70,6 +80,8 @@ MainGame.prototype = {
 
 
         this.add.button( 100, 30*32, 'add_1', this.add1, this, 2, 1, 0);
+        this.add.button( 200, 30*32, 'add_2', this.add2, this, 2, 1, 0);
+        this.add.button( 300, 30*32, 'add_3', this.add3, this, 2, 1, 0);
 
         this.money = 100;
 
@@ -102,7 +114,7 @@ MainGame.prototype = {
         this.players = this.add.group();
 
         for (var i = 0; i<2; i++) {
-            this.createPlayer();
+            this.createPlayer(1,1);
         }
         echo(this.players);
         this.enemy = this.add.sprite(32*28, 64, "enemy");
@@ -117,10 +129,12 @@ MainGame.prototype = {
         return lo + Math.floor(Math.random()*d)
     },
 
-    createPlayer: function() {
+    createPlayer: function(s, h) {
         var player = this.add.sprite(32*24 + 32*this.rand(0,4),  32*24 + 32*this.rand(0,4), "player");
         player.selected = false;
         player.alpha = 1;
+        player.speed = s;
+        player.hp = h;
         player.tint = 0x00ff00;
         this.physics.arcade.enable(player);
         this.players.add(player);
@@ -162,9 +176,16 @@ MainGame.prototype = {
     killThings: function(obj1, obj2) {
         obj1.x = null;
         obj1.y = null;
+        obj1.hp -= 1;
         obj2.x = null;
         obj2.y = null;
-        obj1.kill();
+        if (obj1.hp == 0) {
+            obj1.kill();
+
+            if (this.countAlive() == 0 && this.money == 0) {
+                this.state.start("loss");
+            }
+        }
         obj2.kill();
     },
 
@@ -333,7 +354,7 @@ MainGame.prototype = {
                         var x = this.path.findPath(Math.floor(this.players.children[i].x / 32), Math.floor(this.players.children[i].y / 32), this.endX, this.endY, this.pf);
                         x = this.convertToWorld(x);
                         if (x[0][0] != undefined) {
-                            var t = this.add.tween(this.players.children[i]).to({x: x[0], y: x[1]}, 300 * x[0].length).start();
+                            var t = this.add.tween(this.players.children[i]).to({x: x[0], y: x[1]}, (300/this.players.children[i].speed) * x[0].length).start();
                         }
                         this.pf = gridBackup;
                         this.players.children[i].selected = false;
