@@ -66,9 +66,9 @@ MainGame.prototype = {
         //  Resize the world
         this.layer.resizeWorld();
         this.grid = [];
-        for (var y = 0; y<15; y++) {
+        for (var y = 0; y<30; y++) {
             var toPush = [];
-            for (var x = 0; x < 15; x++) {
+            for (var x = 0; x < 30; x++) {
                 toPush.push((this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==1)?1:0);
             }
             this.grid.push(toPush);
@@ -80,7 +80,7 @@ MainGame.prototype = {
         this.players = this.add.group();
 
         for (var i = 0; i<2; i++) {
-            var player = this.add.sprite(32*13, 32*(12+i*2), "player");
+            var player = this.add.sprite(32*27, 32*(25+i*2), "player");
             player.selected = false;
             player.alpha = 1;
             player.tint = 0x00ff00;
@@ -89,8 +89,8 @@ MainGame.prototype = {
             this.players.add(player);
         }
         echo(this.players);
-        this.enemy = this.add.sprite(13*32, 32, "enemy");
-        this.enemy.goal = [13*32, 32];
+        this.enemy = this.add.sprite(32*28, 64, "enemy");
+        this.enemy.goal = [32*28, 64];
 
     },
 
@@ -195,7 +195,7 @@ MainGame.prototype = {
                 while (path.length == 0) {
                     var gridBackup = this.pf.clone();
                     path = this.path.findPath(Math.floor(this.enemy.x / 32), Math.floor(this.enemy.y / 32),
-                        Math.floor(14 * Math.random()), Math.floor(14 * Math.random()), this.pf);
+                        Math.floor(29 * Math.random()), Math.floor(29 * Math.random()), this.pf);
 
                     this.pf = gridBackup;
                 }
