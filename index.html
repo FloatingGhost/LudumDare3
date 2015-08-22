@@ -1,6 +1,8 @@
+<!doctype html>
 <html>
   <head>
     <title>Ludum Dare 3</title>
+    <meta charset="utf-8">
   </head>
   <img src="banner.png" width="480">
   <div id="game"></div>
@@ -19,7 +21,7 @@
 
   <!-- Start Game -->
   <script>
-    var game = new Phaser.Game(480, 480, Phaser.AUTO, "game");
+    var game = new Phaser.Game(480*2, 480*2 + 120, Phaser.AUTO, "game");
     game.state.add("MainGame", MainGame);
     game.state.add('Menu', Menu, true);
   </script>
