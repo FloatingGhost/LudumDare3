@@ -130,6 +130,7 @@ MainGame.prototype = {
     },
 
     createPlayer: function(s, h) {
+        echo("HHH"+h)
         var player = this.add.sprite(32*24 + 32*this.rand(0,4),  32*24 + 32*this.rand(0,4), "player");
         player.selected = false;
         player.alpha = 1;
@@ -176,9 +177,11 @@ MainGame.prototype = {
     killThings: function(obj1, obj2) {
         obj1.x = null;
         obj1.y = null;
+        echo("HP"+obj1.hp);
         obj1.hp -= 1;
         obj2.x = null;
         obj2.y = null;
+        echo("HP"+obj1.hp);
         if (obj1.hp == 0) {
             obj1.kill();
 
@@ -187,6 +190,15 @@ MainGame.prototype = {
             }
         }
         obj2.kill();
+    },
+
+    countAlive: function() {
+        var c = 0;
+        for (var i in this.players) {
+            if (this.player.children[i].alive) {
+                c += 1;
+            }
+        }
     },
 
     eat: function(obj1, obj2) {
@@ -335,7 +347,7 @@ MainGame.prototype = {
                 if (this.clickedOn(this.players.children[i], this.input.mousePointer.x, this.input.mousePointer.y)) {
                     if (!this.players.children[i].selected) {
                         this.players.children[i].selected = true;
-                        this.players.children[i].tween = this.add.tween(this.players.children[i]).to({alpha: 0.5}, 100, "Linear", true, 0, -1);
+                        this.players.children[i].tween = this.add.tween(this.players.children[i]).to({alpha: 0.5}, 200, "Linear", true, 0, -1);
                         this.players.children[i].tween.yoyo(true, 0);
 
                         this.startX = Math.floor(this.players.children[i].x / 32);
