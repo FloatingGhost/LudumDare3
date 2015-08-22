@@ -48,9 +48,16 @@ MainGame.prototype = {
 
         this.pf = new PF.Grid(this.grid);
         this.path = new PF.AStarFinder();
-        this.player = this.add.sprite(0,0,"player");
-        this.player.selected = false;
-        this.player.alpha = 1;
+
+        this.players = [];
+
+        for (var i = 0; i<4; i++) {
+            var player = this.add.sprite(120*i, 120*i, "player");
+            player.selected = false;
+            player.alpha = 1;
+            this.players.push(player);
+        }
+
 
     },
 
@@ -68,51 +75,53 @@ MainGame.prototype = {
 
 
     update: function() {
-        if (this.player.path != undefined && this.player.path != []) {
-
-        }
         if (this.input.mousePointer.isDown && this.cooldown <= 0) {
-           this.cooldown = 20;
-           if (this.clickedOn(this.player, this.input.mousePointer.x, this.input.mousePointer.y)) {
-               if (!this.player.selected) {
-                   this.player.selected = true;
-                   this.player.tween = this.add.tween(this.player).to( { alpha: 0.5 }, 100, "Linear", true, 0, -1);
-                   this.player.tween.yoyo(true, 0);
+            for (i in this.players) {
+                this.cooldown = 20;
+                if (this.clickedOn(this.players[i], this.input.mousePointer.x, this.input.mousePointer.y)) {
+                    if (!this.players[i].selected) {
+                        this.players[i].selected = true;
+                        this.players[i].tween = this.add.tween(this.players[i]).to({alpha: 0.5}, 100, "Linear", true, 0, -1);
+                        this.players[i].tween.yoyo(true, 0);
 
-                   this.startX = Math.floor(this.player.x/32);
-                   this.startY = Math.floor(this.player.y/32);
-               } else {
-                   this.player.selected = false;
-                   this.player.tween.stop();
-                   this.player.tween = undefined;
-                   this.player.alpha = 1;
-               }
-           } else {
-               if (this.player.selected) {
-                   this.endX = Math.floor(this.input.mousePointer.x/32);
-                   this.endY = Math.floor(this.input.mousePointer.y/32);
-                   console.log(Math.floor(this.player.x/32) ,Math.floor(this.player.y/32), this.endX, this.endY);
-                   var gridBackup = this.pf.clone();
-                   var x = this.path.findPath(Math.floor(this.player.x/32) ,Math.floor(this.player.y/32), this.endX, this.endY, this.pf);
-                   x = this.convertToWorld(x);
-                   console.log("X:",x);
-                   if (x[0][0] != undefined) {
-                       var t = this.add.tween(this.player).to({x: x[0], y: x[1]}, 500 * x.length).start();
-                   }
-                   this.pf=gridBackup;
-                   this.player.selected = false;
-                   this.player.tween.stop();
-                   this.player.tween = undefined;
-                   this.player.alpha = 1;
+                        this.startX = Math.floor(this.players[i].x / 32);
+                        this.startY = Math.floor(this.players[i].y / 32);
+                    } else {
+                        this.players[i].selected = false;
+                        this.players[i].tween.stop();
+                        this.players[i].tween = undefined;
+                        this.players[i].alpha = 1;
+                    }
+                } else {
+                    if (this.players[i].selected) {
+                        this.endX = Math.floor(this.input.mousePointer.x / 32);
+                        this.endY = Math.floor(this.input.mousePointer.y / 32);
+                        console.log(Math.floor(this.players[i].x / 32), Math.floor(this.players[i].y / 32), this.endX, this.endY);
+                        var gridBackup = this.pf.clone();
+                        var x = this.path.findPath(Math.floor(this.players[i].x / 32), Math.floor(this.players[i].y / 32), this.endX, this.endY, this.pf);
+                        x = this.convertToWorld(x);
+                        console.log("X:", x);
+                        if (x[0][0] != undefined) {
+                            var t = this.add.tween(this.players[i]).to({x: x[0], y: x[1]}, 500 * x[0].length).start();
+                        }
+                        this.pf = gridBackup;
+                        this.players[i].selected = false;
+                        this.players[i].tween.stop();
+                        this.players[i].tween = undefined;
+                        this.players[i].alpha = 1;
 
 
-               }
-           }
-        } else {
-            if (this.cooldown > 0) {
-                this.cooldown -= 1;
+                    }
+                }
+
             }
         }
+        else {
+                if (this.cooldown > 0) {
+                    this.cooldown -= 1;
+                }
+            }
+
     },
 
 
