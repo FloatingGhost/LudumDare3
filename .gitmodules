@@ -1,0 +1,3 @@
+[submodule "phaser-tiled"]
+	path = phaser-tiled
+	url = https://github.com/englercj/phaser-tiled.git

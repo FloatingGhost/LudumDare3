@@ -12,13 +12,13 @@ Menu.prototype = {
 
      create: function() {
       this.add.sprite(0,0,"menu");
-      this.add.button(this.world.centreX, this.world.centreY, 'button', this.startGame, this, 2, 1, 0);
+      this.add.button(100, 200, 'button', this.startGame, this, 2, 1, 0);
     },
 
     update: function() {},
 
     startGame: function () {
-        this.state.start("maingame");
+        this.state.start("MainGame");
     }
 
 

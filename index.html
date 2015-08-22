@@ -2,20 +2,24 @@
   <head>
     <title>Ludum Dare 3</title>
   </head>
-  <img src="banner.png">
+  <img src="banner.png" width="480">
   <div id="game"></div>
   <!-- Load engine and plugins -->
   <script src="js/phaser.min.js"></script>
   <script src="js/phaser-virtual-joystick.min.js"></script>
   <script src="js/ScreenShake.js"></script>
   <script src="js/box2d-plugin.js"></script>
+  <script src="js/easystar-0.2.1.min.js"></script>
+  <script src="js/phaser_pathfinding-0.2.0.min.js"></script>
 
   <!-- Load States -->
   <script src="js/states/menu.js"></script>
+  <script src="js/states/maingame.js"></script>
 
   <!-- Start Game -->
   <script>
-    var game = new Phaser.Game(500, 500, Phaser.AUTO, "game");
+    var game = new Phaser.Game(480, 480, Phaser.AUTO, "game");
+    game.state.add("MainGame", MainGame);
     game.state.add('Menu', Menu, true);
   </script>
 </html>
