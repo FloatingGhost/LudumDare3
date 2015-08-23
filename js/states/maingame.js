@@ -41,7 +41,14 @@ MainGame.prototype = {
         this.load.image("add_1", "res/img/add_1.png");
         this.load.image("add_2", "res/img/add_2.png");
         this.load.image("add_3", "res/img/add_3.png");
-        this.load.image("food", "res/img/food.png");
+        this.load.image("food", "res/img/foody.png");
+
+        this.load.audio("spawn","res/sfx/spawn.wav");
+        this.load.audio("shoot","res/sfx/shoot.wav");
+        this.load.audio("click","res/sfx/click.wav");
+        this.load.audio("death","res/sfx/zombie_death.wav");
+        this.load.audio("eat", "res/sfx/eat.wav");
+
 
         this.load.spritesheet("playerS", "res/img/zombie.png", 32, 32);
         this.load.spritesheet("enemyS", "res/img/player-sheet.png",32,32);
@@ -85,8 +92,12 @@ MainGame.prototype = {
 
         this.bullets = [];
 
-
-
+        //Load audio
+        this.spawn = this.add.audio("spawn");
+        this.shoot = this.add.audio("shoot");
+        this.click = this.add.audio("click");
+        this.death = this.add.audio("death");
+        this.eat = this.add.audio("eat");
 
         this.add.button( 100, 30*32, 'add_1', this.add1, this, 2, 1, 0);
         this.add.button( 200, 30*32, 'add_2', this.add2, this, 2, 1, 0);
@@ -155,6 +166,8 @@ MainGame.prototype = {
         player.animations.add('walk_down', [15,16,17,18,19]);
         this.physics.arcade.enable(player);
         this.players.add(player);
+
+        this.spawn.play();
     },
 
     createFud: function() {
@@ -229,7 +242,7 @@ MainGame.prototype = {
                 obj2.x = null;
                 obj2.y = null;
                 obj2.kill();
-
+                this.death.play();
                 if (this.countAlive() == 0 && this.money == 0) {
                     this.state.start("loss");
                 }
@@ -241,7 +254,7 @@ MainGame.prototype = {
     countAlive: function() {
         var c = 0;
         for (var i in this.players.children) {
-            if (this.players.children[i].alive) {
+            if (this.players.children[i].hp > 0) {
                 c += 1;
             }
         }
@@ -264,6 +277,7 @@ MainGame.prototype = {
 
     win: function(obj1, obj2) {
         this.enemy.kill();
+        this.state.start("win");
     },
 
     update: function() {
@@ -375,7 +389,7 @@ MainGame.prototype = {
 
             }
         }
-
+        var min_p = null;
         if (cansee.length == 0) {
             if (arraysEqual(this.enemy.goal,[this.enemy.x, this.enemy.y])) {
                 //Player movement
@@ -397,7 +411,6 @@ MainGame.prototype = {
                 path = this.convertToWorld(path);
                 this.enemy.tweeny = this.add.tween(this.enemy).to({x: path[0], y: path[1]}, 300 * path[0].length);
                 this.enemy.tweeny.start();
-                echo("Started");
                 this.enemy.goal = [path[0][path[0].length - 1], path[1][path[1].length - 1]];
             }
         } else {
@@ -419,14 +432,21 @@ MainGame.prototype = {
             //Shoot
             //Get direction
             if (min_p != null) {
-                echo(min_p.x);
                 if (this.shotCooldown == 0) {
-                    this.shotCooldown = 200;
+                    this.shotCooldown = 100;
                     var direction = -Math.atan2(min_p.x - this.enemy.x, min_p.y - this.enemy.y)+(Math.PI/2);
+
+                    if (Math.random() > 0.5)
+                        direction += Math.PI*Math.random() / 20;
+                    else
+                        direction -= Math.PI*Math.random() / 20;
                     var b = this.add.sprite(this.enemy.x+16, this.enemy.y+16, "bullet");
                     this.physics.arcade.enable(b);
                     b.body.velocity.x = 500*Math.cos(direction);
                     b.body.velocity.y = 500*Math.sin(direction);
+                    b.hp = undefined;
+                    this.bullets.push(b);
+                    this.shoot.play();
                 }
 
             }
@@ -437,6 +457,7 @@ MainGame.prototype = {
             for (i in this.players.children) {
                 this.cooldown = 20;
                 if (this.clickedOn(this.players.children[i], this.input.mousePointer.x, this.input.mousePointer.y)) {
+                    this.click.play();
                     if (!this.players.children[i].selected) {
                         this.players.children[i].selected = true;
                         this.players.children[i].tween = this.add.tween(this.players.children[i]).to({alpha: 0.5}, 200, "Linear", true, 0, -1);
