@@ -6,7 +6,7 @@ Loss.prototype = {
     init: function() {},
 
     preload: function() {
-      this.load.image("menu","res/img/menu_bg.png");
+      this.load.image("menu","res/img/loss.png");
       this.load.image("button", "res/img/start_button.png");
     },
 

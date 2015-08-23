@@ -6,7 +6,7 @@ Win.prototype = {
     init: function() {},
 
     preload: function() {
-      this.load.image("menu","res/img/menu_bg.png");
+      this.load.image("menu","res/img/win.png");
       this.load.image("button", "res/img/start_button.png");
     },
 

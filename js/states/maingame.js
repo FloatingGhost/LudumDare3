@@ -267,6 +267,7 @@ MainGame.prototype = {
         obj2.y = null;
         obj2.kill();
         this.createFud();
+        this.eat.play();
     },
 
     wall: function(obj1, obj2) {
@@ -314,7 +315,7 @@ MainGame.prototype = {
                     } else {
                         for (var q in this.players.children) {
                             var p = this.players.children[q];
-                            if (this.clickedOn(p, this.enemy.x+16 + 32*j*Math.cos(i), this.enemy.y+16 + 32*j*Math.sin(i))) {
+                            if (this.clickedOn(p, this.enemy.x+16 + 32*j*Math.cos(i), this.enemy.y+16 + 32*j*Math.sin(i)) && p.hp > 0) {
                                cansee.push(p);
                             }
                         }
