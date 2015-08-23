@@ -97,7 +97,7 @@ MainGame.prototype = {
         this.shoot = this.add.audio("shoot");
         this.click = this.add.audio("click");
         this.death = this.add.audio("death");
-        this.eat = this.add.audio("eat");
+        this.eatt = this.add.audio("eat");
 
         this.add.button( 100, 30*32, 'add_1', this.add1, this, 2, 1, 0);
         this.add.button( 200, 30*32, 'add_2', this.add2, this, 2, 1, 0);
@@ -132,7 +132,7 @@ MainGame.prototype = {
 
         this.pf = new PF.Grid(this.grid);
         this.path = new PF.AStarFinder();
-        this.food = this.add.group();
+
         this.players = this.add.group();
 
         for (var i = 0; i<2; i++) {
@@ -143,8 +143,7 @@ MainGame.prototype = {
         this.physics.arcade.enable(this.enemy);
         this.enemy.goal = [32*28, 64];
         this.enemy.tweeny = null;
-        this.createFud();
-
+        this.food = this.createFud();
     },
 
     rand: function(lo, hi) {
@@ -159,11 +158,16 @@ MainGame.prototype = {
         player.speed = s;
         player.tweeny = 0;
         player.hp = h;
-        player.tint = 0x00ff00;
+
         player.animations.add('walk_left', [0,1,2,3,4]);
         player.animations.add('walk_right', [5,6,7,8,9]);
         player.animations.add('walk_up', [10,11,12,13,14]);
         player.animations.add('walk_down', [15,16,17,18,19]);
+
+        if (h == 3)
+            player.tint = 0xff0000;
+        if (s == 3)
+            player.tint = 0x0000ff;
         this.physics.arcade.enable(player);
         this.players.add(player);
 
@@ -181,9 +185,9 @@ MainGame.prototype = {
             x = Math.floor(Math.random()*30);
             y = Math.floor(Math.random()*30);
         }
-        var fud = this.add.sprite(x*32, y*32, "food");
-        this.physics.arcade.enable(fud);
-        this.food.add(fud);
+        var food = this.add.sprite(x*32, y*32, "food");
+        this.physics.arcade.enable(food);
+        return food;
     },
 
 
@@ -243,6 +247,7 @@ MainGame.prototype = {
                 obj2.y = null;
                 obj2.kill();
                 this.death.play();
+                echo (this.countAlive());
                 if (this.countAlive() == 0 && this.money == 0) {
                     this.state.start("loss");
                 }
@@ -258,16 +263,17 @@ MainGame.prototype = {
                 c += 1;
             }
         }
+        return c;
     },
 
     eat: function(obj1, obj2) {
         this.money += 100;
-        this.moneyText.text = "Money: " + this.money
-        obj2.x = null;
-        obj2.y = null;
-        obj2.kill();
-        this.createFud();
-        this.eat.play();
+        this.moneyText.text = "Money: " + this.money;
+        this.food.kill();
+        this.food.x = null;
+        this.food.y = null;
+        this.food = this.createFud();
+        this.eatt.play();
     },
 
     wall: function(obj1, obj2) {
@@ -284,7 +290,7 @@ MainGame.prototype = {
     update: function() {
 
         this.physics.arcade.overlap(this.players, this.enemy, this.win, null, this);
-        this.physics.arcade.overlap(this.players, this.food, this.eat, null, this);
+        this.physics.arcade.overlap( this.food,this.players, this.eat, null, this);
         for (var i in this.bullets) {
             this.physics.arcade.overlap (this.players, this.bullets[i], this.killThings, null, this);
             try {

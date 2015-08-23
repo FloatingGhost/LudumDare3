@@ -12,7 +12,7 @@ Loss.prototype = {
 
      create: function() {
       this.add.sprite(0,0,"menu");
-      this.add.button(100, 200, 'button', this.startGame, this, 2, 1, 0);
+      this.add.button(100, 800, 'button', this.startGame, this, 2, 1, 0);
     },
 
     update: function() {},
