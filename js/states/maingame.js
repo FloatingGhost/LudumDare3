@@ -16,7 +16,7 @@ function arraysEqual(a, b) {
 }
 
 function echo(a) {
-    console.log(a);
+    //console.log(a);
 }
 
 
@@ -135,7 +135,7 @@ MainGame.prototype = {
 
         this.players = this.add.group();
 
-        for (var i = 0; i<2; i++) {
+        for (var i = 0; i<4; i++) {
             this.createPlayer(1,1);
         }
         this.enemy = this.add.sprite(32*28, 64, "enemyS");
