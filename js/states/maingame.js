@@ -19,6 +19,12 @@ function echo(a) {
     console.log(a);
 }
 
+
+function kindaEqual(a,b) {
+    var diff = Math.abs(a-b);
+    return diff < 0.3;
+}
+
 MainGame.prototype = {
 
     init: function() {
@@ -26,8 +32,8 @@ MainGame.prototype = {
     },
 
     preload: function() {
-        this.load.tilemap('map', 'res/map/DistCSV', null, Phaser.Tilemap.CSV);
-        this.load.image('tiles', 'res/img/sprites.png');
+        this.load.tilemap('map', 'res/map/map', null, Phaser.Tilemap.CSV);
+        this.load.image('tiles', 'res/img/spawn-sheet.png');
         this.load.image("player", "res/img/player.png");
         this.load.image("enemy", "res/img/enemy.png");
         this.load.image("path", "res/img/path.png");
@@ -36,6 +42,9 @@ MainGame.prototype = {
         this.load.image("add_2", "res/img/add_2.png");
         this.load.image("add_3", "res/img/add_3.png");
         this.load.image("food", "res/img/food.png");
+
+        this.load.spritesheet("playerS", "res/img/zombie.png", 32, 32);
+        this.load.spritesheet("enemyS", "res/img/player-sheet.png",32,32);
     },
 
     add1: function() {
@@ -103,7 +112,9 @@ MainGame.prototype = {
         for (var y = 0; y<30; y++) {
             var toPush = [];
             for (var x = 0; x < 30; x++) {
-                toPush.push((this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==1)?1:0);
+                toPush.push((this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==5 ||
+                this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==7 ||
+                this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==10)?1:0);
             }
             this.grid.push(toPush);
         }
@@ -116,10 +127,11 @@ MainGame.prototype = {
         for (var i = 0; i<2; i++) {
             this.createPlayer(1,1);
         }
-        echo(this.players);
-        this.enemy = this.add.sprite(32*28, 64, "enemy");
+        this.enemy = this.add.sprite(32*28, 64, "enemyS");
+        this.enemy.animations.add('walk_left');
         this.physics.arcade.enable(this.enemy);
         this.enemy.goal = [32*28, 64];
+        this.enemy.tweeny = null;
         this.createFud();
 
     },
@@ -130,13 +142,17 @@ MainGame.prototype = {
     },
 
     createPlayer: function(s, h) {
-        echo("HHH"+h)
-        var player = this.add.sprite(32*24 + 32*this.rand(0,4),  32*24 + 32*this.rand(0,4), "player");
+        var player = this.add.sprite(16+(32*24+ 32*this.rand(0,4)),  16+(32*24 + 32*this.rand(0,4)), "playerS");
         player.selected = false;
         player.alpha = 1;
         player.speed = s;
+        player.tweeny = 0;
         player.hp = h;
         player.tint = 0x00ff00;
+        player.animations.add('walk_left', [0,1,2,3,4]);
+        player.animations.add('walk_right', [5,6,7,8,9]);
+        player.animations.add('walk_up', [10,11,12,13,14]);
+        player.animations.add('walk_down', [15,16,17,18,19]);
         this.physics.arcade.enable(player);
         this.players.add(player);
     },
@@ -144,7 +160,11 @@ MainGame.prototype = {
     createFud: function() {
         var x = 0;
         var y = 0;
-        while(this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==1) {
+        while(this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==7 ||
+        this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==5 ||
+        this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==3 ||
+        this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==4 ||
+        this.map.getTile(this.layer.getTileX(x*32), this.layer.getTileY(y*32)).index==10) {
             x = Math.floor(Math.random()*30);
             y = Math.floor(Math.random()*30);
         }
@@ -158,10 +178,21 @@ MainGame.prototype = {
         var pathx = [];
         var pathy = [];
 
-      for (var z=1; z< q.length; z++) {
-              pathx.push(q[z][0]*32);
-              pathy.push(q[z][1]*32);
-      }
+          for (var z=1; z< q.length; z++) {
+                  pathx.push(q[z][0]*32);
+                  pathy.push(q[z][1]*32);
+          }
+        return [pathx, pathy];
+    },
+
+    convertToWorld2: function(q) {
+        var pathx = [];
+        var pathy = [];
+
+        for (var z=1; z< q.length; z++) {
+            pathx.push( q[z][0]*32);
+            pathy.push( q[z][1]*32);
+        }
         return [pathx, pathy];
     },
 
@@ -175,27 +206,42 @@ MainGame.prototype = {
     },
 
     killThings: function(obj1, obj2) {
-        obj1.x = null;
-        obj1.y = null;
-        echo("HP"+obj1.hp);
-        obj1.hp -= 1;
-        obj2.x = null;
-        obj2.y = null;
-        echo("HP"+obj1.hp);
-        if (obj1.hp == 0) {
-            obj1.kill();
+        if (obj1.hp != undefined) {
+            obj2.x = null;
+            obj2.y = null;
+            obj2.kill();
+            obj1.hp -= 1;
+            if (obj1.hp == 0) {
+                obj1.x = null;
+                obj1.y = null;
+                obj1.kill();
 
-            if (this.countAlive() == 0 && this.money == 0) {
-                this.state.start("loss");
+                if (this.countAlive() == 0 && this.money == 0) {
+                    this.state.start("loss");
+                }
+            }
+        } else {
+            obj1.x = null;
+            obj1.y = null;
+            obj1.kill();
+            obj2.hp -= 1;
+            if (obj2.hp == 0) {
+                obj2.x = null;
+                obj2.y = null;
+                obj2.kill();
+
+                if (this.countAlive() == 0 && this.money == 0) {
+                    this.state.start("loss");
+                }
             }
         }
-        obj2.kill();
+
     },
 
     countAlive: function() {
         var c = 0;
-        for (var i in this.players) {
-            if (this.player.children[i].alive) {
+        for (var i in this.players.children) {
+            if (this.players.children[i].alive) {
                 c += 1;
             }
         }
@@ -227,7 +273,7 @@ MainGame.prototype = {
         for (var i in this.bullets) {
             this.physics.arcade.overlap (this.players, this.bullets[i], this.killThings, null, this);
             try {
-                if ((this.map.getTile(this.layer.getTileX(this.bullets[i].x), this.layer.getTileY(this.bullets[i].y)).index == 1)) {
+                if ((this.map.getTile(this.layer.getTileX(this.bullets[i].x), this.layer.getTileY(this.bullets[i].y)).index == 7)) {
                     this.bullets[i].x = null;
                     this.bullets[i].y = null;
                     this.bullets[i].kill();
@@ -249,7 +295,7 @@ MainGame.prototype = {
             for (var j = 0; j<40; j++) {
                 try {
                     var tile = this.map.getTile(this.layer.getTileX(this.enemy.x+16 + 32*j*Math.cos(i)), this.layer.getTileY(this.enemy.y+16 + 32*j*Math.sin(i)));
-                    if (tile.index == 1) {
+                    if (tile.index == 7 || tile.index == 5) {
                         break;
                     } else {
                         for (var q in this.players.children) {
@@ -270,13 +316,63 @@ MainGame.prototype = {
 
         for (var i in this.players.children) {
             j = this.players.children[i];
-            if (j.tint == 0x00000) {
-                j.tint = 0x00ff00;
+
+            if (j.tweeny != null) {
+
+                if (j.tweeny.isRunning) {
+                    var p = j.tweeny.timeline[0];
+                    var percent = p.percent;
+                    var end = p.vEnd;
+                    var next = Math.floor(end.x.length * percent)+1;
+
+                    if (undefined != end.x[next]) {
+                        var direction = Math.atan2(end.x[next] - j.x, end.y[next] - j.y) + (Math.PI / 2);
+                        if (kindaEqual(direction, 0))
+                            j.animations.play("walk_left", 500);
+                        if (kindaEqual(direction, Math.PI/2))
+                                j.animations.play("walk_down", 500);
+                        if (kindaEqual(direction, Math.PI * (3/2)))
+                                j.animations.play("walk_up", 500);
+                        if (kindaEqual(direction, Math.PI))
+                                j.animations.play("walk_right", 500);
+
+
+
+
+                    }
+
+                } else {
+                    j.animations.stop("walk_left");
+                    j.animations.stop("walk_right");
+                    j.animations.stop("walk_up");
+                    j.animations.stop("walk_down");
+                }
             }
-            if (cansee.indexOf(j) != -1) {
-                j.tint=0xff0000;
-            } else {
-                j.tint=0x00ff00;
+        }
+
+        if (this.enemy.tweeny != null) {
+            if (this.enemy.tweeny.isRunning) {
+                var p = this.enemy.tweeny.timeline[0];
+                var percent = p.percent;
+                var end = p.vEnd;
+                var next = Math.floor(end.x.length * percent)+1;
+
+                if (undefined != end.x[next]) {
+                    var direction = Math.atan2(end.x[next] - this.enemy.x, end.y[next] - this.enemy.y) + (Math.PI / 2);
+                    if (kindaEqual(direction, 0))
+                        this.enemy.animations.frame = 2;
+                    if (kindaEqual(direction, Math.PI/2))
+                        this.enemy.animations.frame = 0;
+                    if (kindaEqual(direction, Math.PI * (3/2)))
+                        this.enemy.animations.frame = 3;
+                    if (kindaEqual(direction, Math.PI))
+                        this.enemy.animations.frame = 1;
+
+
+
+
+                }
+
             }
         }
 
@@ -284,15 +380,24 @@ MainGame.prototype = {
             if (arraysEqual(this.enemy.goal,[this.enemy.x, this.enemy.y])) {
                 //Player movement
                 var path = [];
-                while (path.length == 0) {
+                while (path.length < 2) {
                     var gridBackup = this.pf.clone();
                     path = this.path.findPath(Math.floor(this.enemy.x / 32), Math.floor(this.enemy.y / 32),
                         Math.floor(29 * Math.random()), Math.floor(29 * Math.random()), this.pf);
 
                     this.pf = gridBackup;
+                    if (path.length < 2) {
+                        path = [];
+                    } else {
+                        if (path[0].length < 2 || path[0] == path[1]) {
+                            path = [];
+                        }
+                    }
                 }
                 path = this.convertToWorld(path);
-                this.add.tween(this.enemy).to({x: path[0], y: path[1]}, 300 * path[0].length).start();
+                this.enemy.tweeny = this.add.tween(this.enemy).to({x: path[0], y: path[1]}, 300 * path[0].length);
+                this.enemy.tweeny.start();
+                echo("Started");
                 this.enemy.goal = [path[0][path[0].length - 1], path[1][path[1].length - 1]];
             }
         } else {
@@ -322,19 +427,6 @@ MainGame.prototype = {
                     this.physics.arcade.enable(b);
                     b.body.velocity.x = 500*Math.cos(direction);
                     b.body.velocity.y = 500*Math.sin(direction);
-                    this.bullets.push(b);
-
-                    var path = [];
-                    while (path.length == 0) {
-                        var gridBackup = this.pf.clone();
-                        path = this.path.findPath(Math.floor(this.enemy.x / 32), Math.floor(this.enemy.y / 32),
-                            Math.floor(29 * Math.random()), Math.floor(29 * Math.random()), this.pf);
-
-                        this.pf = gridBackup;
-                    }
-                    path = this.convertToWorld(path);
-                    this.add.tween(this.enemy).to({x: path[0], y: path[1]}, 300 * path[0].length).start();
-                    this.enemy.goal = [path[0][path[0].length - 1], path[1][path[1].length - 1]];
                 }
 
             }
@@ -364,9 +456,11 @@ MainGame.prototype = {
                         this.endY = Math.floor(this.input.mousePointer.y / 32);
                         var gridBackup = this.pf.clone();
                         var x = this.path.findPath(Math.floor(this.players.children[i].x / 32), Math.floor(this.players.children[i].y / 32), this.endX, this.endY, this.pf);
-                        x = this.convertToWorld(x);
+                        x = this.convertToWorld2(x);
                         if (x[0][0] != undefined) {
-                            var t = this.add.tween(this.players.children[i]).to({x: x[0], y: x[1]}, (300/this.players.children[i].speed) * x[0].length).start();
+                            this.players.children[i].tweeny =  this.add.tween(this.players.children[i]).to({x: x[0], y: x[1]}, (300/this.players.children[i].speed) * x[0].length);
+                            this.players.children[i].animations.play("walk", 500, true);
+                            this.players.children[i].tweeny.start();
                         }
                         this.pf = gridBackup;
                         this.players.children[i].selected = false;
